@@ -6,50 +6,25 @@ This project presents a physics-based 2D Langevin dynamics simulation of magneti
 It compares bulk and near-wall hydrodynamic models and evaluates capture efficiency under varying flow and magnetic conditions.
 
 ---
-
-## Results
-
 ## Results
 
 ### Particle Trajectories
-Particles initially follow the flow direction and gradually deviate toward the magnetic source due to applied magnetic force.
-
 ![Trajectories](figure1_trajectories.png)
 
----
-
 ### Capture Efficiency vs Magnetic Force
-Capture efficiency increases with increasing magnetic force, as particles are more strongly attracted toward the capture region.
-
-![Magnetic Sweep](fig 2 magnetic force vs capture efficiency.png)
-
----
+![Magnetic Sweep](figure2_magnetic_sweep.png)
 
 ### Capture Efficiency vs Flow Velocity
-Higher flow velocities reduce capture efficiency due to increased hydrodynamic drag.
-
-![Flow Sweep](fig 3 capture vs flow velocity.png)
-
----
+![Flow Sweep](figure3_flow_sweep.png)
 
 ### Capture Efficiency Heatmap
-Optimal capture occurs at high magnetic force and low flow velocity, as shown in the parameter heatmap.
-
-![Heatmap](flow velocity vs capture efficiency fig 4.png)
-
----
+![Heatmap](figure4_heatmap.png)
 
 ### Bulk vs Near-Wall Comparison
-The near-wall model shows more realistic particle behavior due to increased drag and reduced diffusion near boundaries.
-
-![Comparison](bulk vs near wall model comparison fig 5.png)
-
----
+![Comparison](figure5_comparison.png)
 
 ### ML Prediction
-The machine learning model approximates simulation results, showing a strong correlation with computed capture efficiency.
-
-![ML](ML predictions.png)
+![ML](figure6_ml_prediction.png)
 ---
 
 ## Key Insights
