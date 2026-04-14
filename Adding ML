@@ -1,0 +1,124 @@
+# =============================================================
+# ML Predictor — Capture Efficiency Prediction
+# Author: Sparsha Adhikari
+# Trains a neural network on simulation data to predict
+# capture efficiency from magnetic force and flow velocity
+# =============================================================
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.neural_network import MLPRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error, r2_score
+
+# -------------------------------------------------------------
+# STEP 1 — Generate training data using simulation
+# -------------------------------------------------------------
+import sys
+sys.path.append('.')
+
+# Channel geometry
+L = 500.0
+H = 100.0
+dt = 0.1
+n_steps = 10000
+n_particles = 30
+noise = 0.5
+x_magnet = 250.0
+y_magnet = 0.0
+r_capture = 5.0
+
+def flow_velocity(y, U_max):
+    return U_max * 4 * y * (H - y) / H**2
+
+def run_simulation(mag_force, U_max):
+    captured = 0
+    for p in range(n_particles):
+        x = 0.0
+        y = np.random.uniform(5, H - 5)
+        for step in range(n_steps):
+            vx = flow_velocity(y, U_max)
+            vy = 0.0
+            dx = x_magnet - x
+            dy = y_magnet - y
+            dist = max(np.sqrt(dx**2 + dy**2), r_capture)
+            vx += mag_force * dx / dist
+            vy += mag_force * dy / dist
+            vx += np.random.normal(0, noise)
+            vy += np.random.normal(0, noise)
+            x += vx * dt
+            y += vy * dt
+            if y < 0: y = 0
+            if y > H: y = H
+            if x < 0: x = 0
+            dist = np.sqrt((x - x_magnet)**2 + (y - y_magnet)**2)
+            if dist < r_capture:
+                captured += 1
+                break
+            if x > L:
+                break
+    return captured / n_particles
+
+# parameter grid for training data
+mag_values  = [0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.5, 2.0]
+flow_values = [0.1, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0]
+
+X = []
+y_data = []
+
+print("Generating training data...")
+for mag in mag_values:
+    for flow in flow_values:
+        eff = np.mean([run_simulation(mag, flow) for _ in range(3)])
+        X.append([mag, flow])
+        y_data.append(eff)
+        print(f"mag={mag:.2f} flow={flow:.1f} → {eff:.2%}")
+
+X = np.array(X)
+y_data = np.array(y_data)
+
+# -------------------------------------------------------------
+# STEP 2 — Train neural network
+# -------------------------------------------------------------
+print("\nTraining neural network...")
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y_data, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+model = MLPRegressor(
+    hidden_layer_sizes=(64, 64, 32),
+    activation='relu',
+    max_iter=1000,
+    random_state=42
+)
+
+model.fit(X_train_scaled, y_train)
+
+y_pred = model.predict(X_test_scaled)
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print(f"R² score: {r2:.4f}")
+print(f"MSE: {mse:.4f}")
+
+# -------------------------------------------------------------
+# STEP 3 — Plot predicted vs actual
+# -------------------------------------------------------------
+plt.figure(figsize=(7, 6))
+plt.scatter(y_test, y_pred, color='darkblue', alpha=0.7, s=80)
+plt.plot([0, 1], [0, 1], 'r--', linewidth=2, label='Perfect prediction')
+plt.xlabel('Actual capture efficiency (simulation)')
+plt.ylabel('Predicted capture efficiency (ML)')
+plt.title(f'Figure 6 — ML Prediction vs Simulation\n'
+          f'R² = {r2:.3f} | MSE = {mse:.4f}')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig('figure6_ml_prediction.png', dpi=300)
+plt.show()
+print("Done. figure6_ml_prediction.png saved.")
